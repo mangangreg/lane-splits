@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lane Splits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#E6E9ED;
+    --surface:#FBFCFD;
+    --surface-2:#F0F2F5;
+    --ink:#12171D;
+    --muted:#5D6773;
+    --line:#CBD2DA;
+    --line-soft:#DDE2E8;
+    --brick:#B04430;
+    --brick-deep:#8A3122;
+    --brick-dim:#6E4038;
+    --chalk:#FFFFFF;
+    --good:#15704F;
+    --warn:#9A5B12;
+    --shadow:0 1px 2px rgba(18,23,29,.08), 0 8px 24px -16px rgba(18,23,29,.35);
+    --r:10px;
+  }
+  :root:not([data-theme="light"]) { color-scheme: light dark; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1216;
+      --surface:#181D23;
+      --surface-2:#20262E;
+      --ink:#EAEEF2;
+      --muted:#98A3AF;
+      --line:#2C343D;
+      --line-soft:#242B33;
+      --brick:#C1503A;
+      --brick-deep:#8C3625;
+      --brick-dim:#5A342C;
+      --chalk:#F4F6F8;
+      --good:#4CBE93;
+      --warn:#D79B4A;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#0E1216;
+    --surface:#181D23;
+    --surface-2:#20262E;
+    --ink:#EAEEF2;
+    --muted:#98A3AF;
+    --line:#2C343D;
+    --line-soft:#242B33;
+    --brick:#C1503A;
+    --brick-deep:#8C3625;
+    --brick-dim:#5A342C;
+    --chalk:#F4F6F8;
+    --good:#4CBE93;
+    --warn:#D79B4A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    font-size:15px;
+    line-height:1.45;
+    -webkit-text-size-adjust:100%;
+  }
+  img{max-width:100%}
+  [hidden]:not([hidden=until-found i]){display:none!important}
+  .wrap{
+    max-width:600px;
+    margin:0 auto;
+    padding-inline:18px;
+    padding-block:26px 56px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .display{ font-variation-settings:'wdth' 118; letter-spacing:-.01em; }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, Menlo, monospace; font-variant-numeric:tabular-nums; }
+  .eyebrow{
+    font-size:11px; text-transform:uppercase; letter-spacing:.14em;
+    font-weight:600; color:var(--muted);
+  }
+
+  header h1{
+    margin:0;
+    font-size:clamp(30px,9vw,42px);
+    font-weight:800;
+    font-variation-settings:'wdth' 122;
+    text-transform:uppercase;
+    letter-spacing:-.005em;
+    line-height:.95;
+    text-wrap:balance;
+  }
+  header h1 span{ color:var(--brick); }
+  header p{ margin:8px 0 0; color:var(--muted); max-width:44ch; }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line-soft);
+    border-radius:var(--r);
+    padding:16px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .card > .eyebrow{ margin-bottom:-4px; }
+
+  /* ---- segmented control ---- */
+  .seg{ display:flex; gap:2px; background:var(--surface-2); border-radius:8px; padding:3px; }
+  .seg button{
+    flex:1; border:0; background:transparent; color:var(--muted);
+    font-family:inherit; font-size:13px; font-weight:600; padding:7px 4px;
+    border-radius:6px; cursor:pointer; white-space:nowrap;
+  }
+  .seg button[aria-pressed="true"]{ background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+
+  .field{ display:flex; align-items:center; gap:10px; }
+  .field label{ font-size:13px; color:var(--muted); min-width:auto; }
+  input[type="text"], select{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:20px; font-weight:500;
+    color:var(--ink); background:var(--surface-2);
+    border:1px solid var(--line); border-radius:8px;
+    padding:9px 12px; width:100%; min-width:0;
+  }
+  select{ font-family:'Archivo',sans-serif; font-size:15px; }
+  input[type="number"]{
+    font-family:'IBM Plex Mono', monospace; font-size:15px;
+    color:var(--ink); background:var(--surface-2);
+    border:1px solid var(--line); border-radius:8px; padding:6px 8px; width:88px;
+  }
+  .unit{ font-size:13px; color:var(--muted); white-space:nowrap; }
+  .step{
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500;
+    border-radius:8px; padding:10px 10px; cursor:pointer; white-space:nowrap;
+  }
+  .step:active{ background:var(--line-soft); }
+  :focus-visible{ outline:2px solid var(--brick); outline-offset:2px; }
+
+  /* ---- lane strip ---- */
+  .track{
+    position:relative;
+    display:flex;
+    border-radius:8px;
+    overflow:hidden;
+    background:var(--brick-dim);
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .kerb{ width:7px; flex:none; background:repeating-linear-gradient(180deg,var(--chalk) 0 9px, var(--brick-deep) 9px 18px); }
+  .lane{
+    flex:1 1 0; min-width:0;
+    border:0; padding:0; margin:0;
+    height:64px; cursor:pointer;
+    background:var(--brick-dim);
+    color:rgba(255,255,255,.55);
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:14px;
+    font-variation-settings:'wdth' 110;
+    border-left:2px solid rgba(255,255,255,.42);
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:7px;
+    transition:background .12s ease, color .12s ease;
+  }
+  .lane:first-of-type{ border-left:0; }
+  .lane[aria-pressed="true"]{
+    background:var(--brick);
+    color:#fff;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.9);
+  }
+  .lane .tick{
+    position:absolute; top:8px;
+  }
+  .lane-readout{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  }
+  .lane-readout .big{ font-size:22px; font-weight:600; }
+  .hint{ font-size:12px; color:var(--muted); }
+
+  /* ---- rep chips ---- */
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;
+    font-size:13px; padding:8px 11px; border-radius:999px; cursor:pointer;
+  }
+  .chip[aria-pressed="true"]{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+
+  /* ---- result ---- */
+  .result{
+    background:var(--surface);
+    border:1px solid var(--line-soft);
+    border-radius:var(--r);
+    overflow:hidden;
+  }
+  .result-head{
+    padding:18px 16px 16px;
+    border-bottom:1px solid var(--line-soft);
+    background:linear-gradient(180deg,var(--surface-2),var(--surface));
+  }
+  #repTime{
+    font-size:clamp(46px,15vw,66px); font-weight:700; line-height:.92;
+    font-variation-settings:'wdth' 118; letter-spacing:-.02em;
+    display:block; margin:2px 0 0;
+  }
+  #repCaption{ font-size:13px; color:var(--muted); margin-top:8px; }
+  .facts{
+    display:grid; grid-template-columns:repeat(3,1fr);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .fact{ padding:12px 14px; border-left:1px solid var(--line-soft); }
+  .fact:first-child{ border-left:0; }
+  .fact .k{ font-size:10px; text-transform:uppercase; letter-spacing:.11em; color:var(--muted); font-weight:600; }
+  .fact .v{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-variant-numeric:tabular-nums; margin-top:3px; }
+
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    font-size:10px; text-transform:uppercase; letter-spacing:.11em; color:var(--muted);
+    font-weight:600; text-align:right; padding:10px 14px 8px;
+  }
+  thead th:first-child{ text-align:left; }
+  tbody td{
+    padding:9px 14px; border-top:1px solid var(--line-soft);
+    font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;
+    font-size:15px; text-align:right;
+  }
+  tbody td:first-child{
+    text-align:left; font-family:'Archivo',sans-serif; font-weight:600; font-size:13px;
+  }
+  tbody tr.final td{ background:var(--surface-2); }
+  tbody tr.final td:last-child{ color:var(--brick); font-weight:600; }
+  td.cum{ color:var(--muted); }
+
+  .note{
+    display:flex; gap:9px; align-items:flex-start;
+    font-size:12.5px; color:var(--muted); line-height:1.4;
+    padding:12px 14px; border-top:1px solid var(--line-soft);
+  }
+  .note b{ color:var(--warn); font-weight:600; }
+
+  .actions{ display:flex; gap:8px; }
+  .btn{
+    flex:1; border:1px solid var(--ink); background:var(--ink); color:var(--surface);
+    font-family:'Archivo',sans-serif; font-weight:700; font-size:14px;
+    text-transform:uppercase; letter-spacing:.06em;
+    padding:13px; border-radius:9px; cursor:pointer;
+  }
+  .btn.ghost{ background:transparent; color:var(--ink); border-color:var(--line); font-weight:600; letter-spacing:.04em; }
+  .btn:disabled{ opacity:.5; cursor:default; }
+
+  details.setup{ border:1px solid var(--line-soft); border-radius:var(--r); background:var(--surface); }
+  details.setup summary{
+    cursor:pointer; padding:13px 16px; font-size:12px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.11em; color:var(--muted); list-style:none;
+  }
+  details.setup summary::-webkit-details-marker{ display:none }
+  details.setup summary::after{ content:'＋'; float:right; }
+  details.setup[open] summary::after{ content:'－'; }
+  .setup-body{ padding:0 16px 16px; display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--line-soft); padding-top:14px; }
+  .switch{ display:flex; align-items:center; gap:9px; font-size:13.5px; }
+  .switch input{ width:18px; height:18px; accent-color:var(--brick); }
+
+  #shareOut{ display:none; flex-direction:column; gap:8px; }
+  #shareOut img{ width:100%; border-radius:var(--r); border:1px solid var(--line-soft); display:block; }
+
+  footer{ font-size:12px; color:var(--muted); line-height:1.5; }
+  footer code{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; }
+
+  @media (max-width:380px){
+    .lane{ font-size:12px; height:58px; }
+    .fact{ padding:10px 10px; }
+    .fact .v{ font-size:15px; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Track workout splits</div>
+    <h1 class="display">Lane <span>Splits</span></h1>
+    <p>Your goal pace, honestly converted to lap splits for the lane you actually run in — not the 400&nbsp;m line nobody gets on a busy track.</p>
+  </header>
+
+  <!-- PACE -->
+  <section class="card">
+    <div class="eyebrow">1 · Goal pace</div>
+    <div class="seg" role="group" aria-label="Pace entry method">
+      <button type="button" id="mode-mile" data-mode="mile" aria-pressed="true">min / mile</button>
+      <button type="button" id="mode-km" data-mode="km" aria-pressed="false">min / km</button>
+      <button type="button" id="mode-race" data-mode="race" aria-pressed="false">Race time</button>
+    </div>
+
+    <div id="paneDirect" class="field">
+      <button type="button" class="step" id="paceDown" aria-label="Five seconds slower">−5s</button>
+      <input type="text" id="paceInput" inputmode="decimal" autocomplete="off"
+             aria-label="Goal pace, minutes and seconds" value="8:00">
+      <button type="button" class="step" id="paceUp" aria-label="Five seconds faster">+5s</button>
+      <span class="unit" id="paceUnit">/ mi</span>
+    </div>
+
+    <div id="paneRace" hidden>
+      <div class="field">
+        <select id="raceDist" aria-label="Race distance">
+          <option value="1609.344">1 mile</option>
+          <option value="5000">5K</option>
+          <option value="10000">10K</option>
+          <option value="16093.44">10 mile</option>
+          <option value="21097.5" selected>Half marathon</option>
+          <option value="42195">Marathon</option>
+        </select>
+        <input type="text" id="raceTime" inputmode="numeric" autocomplete="off"
+               aria-label="Race time" value="1:45:00" style="max-width:150px">
+      </div>
+      <div class="hint" id="raceDerived" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- LANE -->
+  <section class="card">
+    <div class="eyebrow">2 · Lanes you run in</div>
+    <div class="track" id="track" role="group" aria-label="Select the lanes you run in"></div>
+    <div class="lane-readout">
+      <div><span class="mono big" id="laneDist">418.5 m</span> <span class="hint">per lap</span></div>
+      <div class="hint" id="laneLabel">Lanes 3–4 · effective lane 3.5</div>
+    </div>
+    <div class="hint">Tap a lane, or drag across the ones you drift between. Selecting two lanes averages them into a half step.</div>
+  </section>
+
+  <!-- REP -->
+  <section class="card">
+    <div class="eyebrow">3 · Rep</div>
+    <div class="chips" id="reps" role="group" aria-label="Rep distance"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="result" aria-live="polite">
+    <div class="result-head">
+      <div class="eyebrow">Target rep time</div>
+      <span class="mono display" id="repTime">8:22.7</span>
+      <div id="repCaption">4 laps of 418.5 m at 8:00 / mi</div>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="k">Lap split</div><div class="v" id="fLap">2:05.7</div></div>
+      <div class="fact"><div class="k">True distance</div><div class="v" id="fDist">1674 m</div></div>
+      <div class="fact"><div class="k">Bonus</div><div class="v" id="fBonus" style="color:var(--good)">+74 m</div></div>
+    </div>
+    <table>
+      <thead>
+        <tr><th scope="col">Lap</th><th scope="col">Split</th><th scope="col">Elapsed</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="note" id="warnNote"></div>
+  </section>
+
+  <div class="actions">
+    <button type="button" class="btn" id="shareBtn">Save split image</button>
+    <button type="button" class="btn ghost" id="copyBtn">Copy splits</button>
+  </div>
+  <div id="shareOut">
+    <img id="shareImg" alt="Split card ready to save">
+    <div class="hint" id="shareHint">Press and hold the image to save it to your phone.</div>
+  </div>
+
+  <details class="setup">
+    <summary>Track setup</summary>
+    <div class="setup-body">
+      <div class="field">
+        <label for="laneWidth">Lane width</label>
+        <input type="number" id="laneWidth" value="1.22" step="0.01" min="0.9" max="1.5">
+        <span class="unit">m — 1.22 is the World Athletics standard</span>
+      </div>
+      <label class="switch"><input type="checkbox" id="kerb" checked> Raised kerb on the inside of lane 1</label>
+      <div class="hint">Distances use the World Athletics model: 84.39 m straights, 36.50 m inner radius, and a measure line 30 cm out from the kerb in lane 1 (20 cm if there is no kerb) and 20 cm out from the inner line in every other lane.</div>
+    </div>
+  </details>
+
+  <footer>
+    Pace is held constant, so the extra metres are extra work, not a faster effort. A 400 m assumption in lanes 3–4 would have you running roughly 4.6% faster than intended for the whole session.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STRAIGHT = 84.39, INNER_R = 36.50, MI = 1609.344;
+  var LANES = 8;
+
+  var state = {
+    mode: 'mile',
+    mile: '8:00',
+    km: '5:00',
+    raceDist: 21097.5,
+    raceTime: '1:45:00',
+    lanes: [3,4],
+    rep: 1600,
+    laneWidth: 1.22,
+    kerb: true
+  };
+
+  /* ---------- storage ---------- */
+  function load(){
+    try{
+      var raw = localStorage.getItem('lane-splits');
+      if(raw){ var o = JSON.parse(raw); for(var k in o){ if(k in state) state[k]=o[k]; } }
+    }catch(e){}
+  }
+  function save(){
+    try{ localStorage.setItem('lane-splits', JSON.stringify(state)); }catch(e){}
+  }
+
+  /* ---------- math ---------- */
+  function laneDistance(n){
+    var offset = (n === 1 && state.kerb) ? 0.30 : 0.20;
+    var r = INNER_R + state.laneWidth * (n - 1) + offset;
+    return 2*STRAIGHT + 2*Math.PI*r;
+  }
+  function selectedLapDistance(){
+    var sum = 0;
+    for(var i=0;i<state.lanes.length;i++) sum += laneDistance(state.lanes[i]);
+    return sum / state.lanes.length;
+  }
+  function effectiveLane(){
+    var sum = 0;
+    for(var i=0;i<state.lanes.length;i++) sum += state.lanes[i];
+    return sum / state.lanes.length;
+  }
+  function parseClock(str){
+    var parts = String(str).trim().split(':');
+    var sec = 0;
+    for(var i=0;i<parts.length;i++){
+      var p = parts[i].trim();
+      if(p === '' || isNaN(Number(p))) return NaN;
+      sec = sec*60 + Number(p);
+    }
+    return sec;
+  }
+  function fmt(sec, dec){
+    if(!isFinite(sec) || sec <= 0) return '—';
+    dec = (dec === undefined) ? 1 : dec;
+    var f = Math.pow(10, dec);
+    var t = Math.round(sec*f)/f;
+    var h = Math.floor(t/3600); t -= h*3600;
+    var m = Math.floor(t/60); var s = t - m*60;
+    var ss = (s < 10 ? '0' : '') + s.toFixed(dec);
+    var mm = (h ? (m<10?'0':'')+m : String(m));
+    return (h ? h + ':' : '') + mm + ':' + ss;
+  }
+  /* seconds per metre from current inputs */
+  function paceSecPerM(){
+    if(state.mode === 'race'){
+      var t = parseClock(state.raceTime);
+      return (isFinite(t) && t>0) ? t/state.raceDist : NaN;
+    }
+    var v = parseClock(state.mode === 'km' ? state.km : state.mile);
+    if(!isFinite(v) || v <= 0) return NaN;
+    return v / (state.mode === 'km' ? 1000 : MI);
+  }
+
+  /* ---------- element refs ---------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var trackEl = $('track'), repsEl = $('reps'), rowsEl = $('rows');
+
+  /* ---------- lane strip ---------- */
+  var laneBtns = [];
+  (function buildTrack(){
+    var kerbEl = document.createElement('div');
+    kerbEl.className = 'kerb';
+    kerbEl.setAttribute('aria-hidden','true');
+    trackEl.appendChild(kerbEl);
+    for(var n=1;n<=LANES;n++){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'lane';
+      b.dataset.lane = String(n);
+      b.textContent = String(n);
+      b.setAttribute('aria-pressed','false');
+      b.setAttribute('aria-label','Lane ' + n);
+      trackEl.appendChild(b);
+      laneBtns.push(b);
+    }
+  })();
+
+  function setRange(a, b){
+    var lo = Math.min(a,b), hi = Math.max(a,b), out = [];
+    for(var n=lo;n<=hi;n++) out.push(n);
+    state.lanes = out;
+    render();
+    save();
+  }
+
+  var dragAnchor = null;
+  function laneFromEvent(ev){
+    var el = document.elementFromPoint(ev.clientX, ev.clientY);
+    if(el && el.classList && el.classList.contains('lane')) return Number(el.dataset.lane);
+    return null;
+  }
+  trackEl.addEventListener('pointerdown', function(ev){
+    var n = laneFromEvent(ev);
+    if(n === null) return;
+    dragAnchor = n;
+    setRange(n, n);
+    if(trackEl.setPointerCapture) trackEl.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+    laneBtns[n-1].focus();
+  });
+  trackEl.addEventListener('pointermove', function(ev){
+    if(dragAnchor === null) return;
+    var n = laneFromEvent(ev);
+    if(n !== null && n !== state.lanes[state.lanes.length-1]) setRange(dragAnchor, n);
+  });
+  function endDrag(){ dragAnchor = null; }
+  trackEl.addEventListener('pointerup', endDrag);
+  trackEl.addEventListener('pointercancel', endDrag);
+
+  trackEl.addEventListener('keydown', function(ev){
+    var n = Number(ev.target.dataset && ev.target.dataset.lane);
+    if(!n) return;
+    if(ev.key === 'ArrowRight' || ev.key === 'ArrowLeft'){
+      var next = Math.min(LANES, Math.max(1, n + (ev.key === 'ArrowRight' ? 1 : -1)));
+      if(ev.shiftKey){ setRange(state.lanes[0], next); }
+      else { setRange(next, next); }
+      laneBtns[next-1].focus();
+      ev.preventDefault();
+    }
+  });
+
+  /* ---------- rep chips ---------- */
+  var REPS = [200,300,400,600,800,1000,1200,1600,2000,3200];
+  REPS.forEach(function(m){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.dataset.rep = String(m);
+    b.textContent = m + ' m';
+    b.setAttribute('aria-pressed','false');
+    b.addEventListener('click', function(){ state.rep = m; render(); save(); });
+    repsEl.appendChild(b);
+  });
+
+  /* ---------- inputs ---------- */
+  ['mile','km','race'].forEach(function(m){
+    $('mode-' + m).addEventListener('click', function(){ state.mode = m; render(); save(); });
+  });
+  $('paceInput').addEventListener('input', function(){
+    if(state.mode === 'km') state.km = this.value; else state.mile = this.value;
+    render(); save();
+  });
+  function nudge(delta){
+    var key = state.mode === 'km' ? 'km' : 'mile';
+    var v = parseClock(state[key]);
+    if(!isFinite(v)) return;
+    v = Math.max(60, v + delta);
+    state[key] = fmt(v, 0);
+    $('paceInput').value = state[key];
+    render(); save();
+  }
+  $('paceDown').addEventListener('click', function(){ nudge(5); });
+  $('paceUp').addEventListener('click', function(){ nudge(-5); });
+  $('raceDist').addEventListener('change', function(){ state.raceDist = Number(this.value); render(); save(); });
+  $('raceTime').addEventListener('input', function(){ state.raceTime = this.value; render(); save(); });
+  $('laneWidth').addEventListener('input', function(){
+    var v = Number(this.value);
+    if(isFinite(v) && v > 0.5) { state.laneWidth = v; render(); save(); }
+  });
+  $('kerb').addEventListener('change', function(){ state.kerb = this.checked; render(); save(); });
+
+  /* ---------- render ---------- */
+  var current = null;
+
+  function compute(){
+    var pace = paceSecPerM();
+    var lap = selectedLapDistance();
+    var laps = state.rep / 400;
+    var full = Math.floor(laps + 1e-9);
+    var frac = laps - full;
+    var trueDist = laps * lap;
+    var total = trueDist * pace;
+
+    var rows = [], cum = 0;
+    for(var i=1;i<=full;i++){
+      cum += lap * pace;
+      rows.push({ label:'Lap ' + i, seg: lap*pace, cum: cum, dist: i*lap });
+    }
+    if(frac > 0.001){
+      cum += frac * lap * pace;
+      rows.push({ label: Math.round(frac*400) + ' m', seg: frac*lap*pace, cum: cum, dist: trueDist });
+    }
+    return {
+      pace: pace, lap: lap, laps: laps, rows: rows,
+      total: total, trueDist: trueDist, bonus: trueDist - state.rep,
+      lapTime: lap * pace,
+      naivePacePerMi: (400 * pace / lap) * MI
+    };
+  }
+
+  function laneLabelText(){
+    var l = state.lanes;
+    if(l.length === 1) return 'Lane ' + l[0];
+    return 'Lanes ' + l[0] + '–' + l[l.length-1] + ' · effective lane ' + effectiveLane().toFixed(1).replace(/\.0$/,'');
+  }
+  function paceLabel(){
+    var p = paceSecPerM();
+    if(!isFinite(p)) return '—';
+    return state.mode === 'km' ? fmt(p*1000, 0) + ' / km' : fmt(p*MI, 0) + ' / mi';
+  }
+
+  function render(){
+    // mode UI
+    ['mile','km','race'].forEach(function(m){
+      $('mode-' + m).setAttribute('aria-pressed', String(state.mode === m));
+    });
+    $('paneDirect').hidden = (state.mode === 'race');
+    $('paneRace').hidden = (state.mode !== 'race');
+    if(state.mode !== 'race'){
+      var want = state.mode === 'km' ? state.km : state.mile;
+      if($('paceInput').value !== want) $('paceInput').value = want;
+      $('paceUnit').textContent = state.mode === 'km' ? '/ km' : '/ mi';
+    } else {
+      $('raceDist').value = String(state.raceDist);
+      if($('raceTime').value !== state.raceTime) $('raceTime').value = state.raceTime;
+      var p = paceSecPerM();
+      $('raceDerived').textContent = isFinite(p)
+        ? 'That is ' + fmt(p*MI,0) + ' / mi · ' + fmt(p*1000,0) + ' / km'
+        : 'Enter a time like 1:45:00';
+    }
+
+    // lanes
+    for(var i=0;i<laneBtns.length;i++){
+      var on = state.lanes.indexOf(i+1) !== -1;
+      laneBtns[i].setAttribute('aria-pressed', String(on));
+    }
+    var c = compute();
+    current = c;
+    $('laneDist').textContent = c.lap.toFixed(1) + ' m';
+    $('laneLabel').textContent = laneLabelText();
+
+    // reps
+    var chips = repsEl.querySelectorAll('.chip');
+    for(var j=0;j<chips.length;j++){
+      chips[j].setAttribute('aria-pressed', String(Number(chips[j].dataset.rep) === state.rep));
+    }
+
+    // result
+    $('repTime').textContent = fmt(c.total, 1);
+    $('repCaption').textContent = (c.laps % 1 === 0 ? c.laps : c.laps.toFixed(2)) +
+      (c.laps === 1 ? ' lap' : ' laps') + ' of ' + c.lap.toFixed(1) + ' m at ' + paceLabel();
+    $('fLap').textContent = fmt(c.lapTime, 1);
+    $('fDist').textContent = Math.round(c.trueDist) + ' m';
+    $('fBonus').textContent = (c.bonus >= 0 ? '+' : '') + Math.round(c.bonus) + ' m';
+
+    rowsEl.innerHTML = '';
+    c.rows.forEach(function(r, idx){
+      var tr = document.createElement('tr');
+      if(idx === c.rows.length - 1) tr.className = 'final';
+      tr.innerHTML = '<td>' + r.label + '</td>' +
+                     '<td>' + fmt(r.seg,1) + '</td>' +
+                     '<td class="cum">' + fmt(r.cum,1) + '</td>';
+      rowsEl.appendChild(tr);
+    });
+
+    var lapAt400 = fmt(400 * c.pace, 1);
+    var diff = (c.naivePacePerMi - c.pace*MI);
+    var note = $('warnNote');
+    if(state.lanes.length === 1 && state.lanes[0] === 1){
+      note.innerHTML = '<span>You are on the 400 m line, so these are the same splits a plain pace calculator gives you.</span>';
+    } else if(isFinite(diff) && diff < -0.5){
+      note.innerHTML = '<span>Running <b>' + lapAt400 + '</b> laps out here — the 400 m answer — would actually be ' +
+        fmt(c.naivePacePerMi,0) + ' / mi, about ' + Math.round(-diff) + ' s per mile too fast.</span>';
+    } else {
+      note.innerHTML = '<span>Enter a pace to see your splits.</span>';
+    }
+  }
+
+  /* ---------- copy ---------- */
+  $('copyBtn').addEventListener('click', function(){
+    var c = current, lines = [];
+    lines.push(state.rep + ' m @ ' + paceLabel() + ' · ' + laneLabelText() + ' (' + c.lap.toFixed(1) + ' m laps)');
+    c.rows.forEach(function(r){ lines.push(r.label + '  ' + fmt(r.seg,1) + '  (' + fmt(r.cum,1) + ')'); });
+    lines.push('Total ' + fmt(c.total,1) + ' for ' + Math.round(c.trueDist) + ' m');
+    var txt = lines.join('\n');
+    var btn = this;
+    var done = function(){ btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy splits'; }, 1600); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, function(){ done(); });
+    } else { done(); }
+  });
+
+  /* ---------- share image ---------- */
+  function drawCard(){
+    var W = 1080, H = 1350, c = current;
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var x = cv.getContext('2d');
+
+    x.fillStyle = '#12161A'; x.fillRect(0,0,W,H);
+
+    // lane band across the top
+    var bandY = 0, bandH = 170;
+    var lo = state.lanes[0], hi = state.lanes[state.lanes.length-1];
+    var lw = W / LANES;
+    for(var n=1;n<=LANES;n++){
+      var on = (n >= lo && n <= hi);
+      x.fillStyle = on ? '#B84B34' : '#4A2E27';
+      x.fillRect((n-1)*lw, bandY, lw, bandH);
+      x.fillStyle = 'rgba(255,255,255,.4)';
+      x.fillRect((n-1)*lw, bandY, 3, bandH);
+      x.fillStyle = on ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.35)';
+      x.font = '700 30px Archivo, sans-serif';
+      x.textAlign = 'center';
+      x.fillText(String(n), (n-1)*lw + lw/2, bandY + bandH - 26);
+    }
+
+    var PAD = 72;
+    x.textAlign = 'left';
+    x.fillStyle = '#8C97A3';
+    x.font = '600 24px Archivo, sans-serif';
+    x.fillText((state.rep + ' M REPS · ' + laneLabelText()).toUpperCase(), PAD, 268);
+
+    x.fillStyle = '#F2F5F8';
+    x.font = '700 168px Archivo, sans-serif';
+    x.fillText(fmt(c.total,1), PAD, 420);
+
+    x.fillStyle = '#C1503A';
+    x.font = '600 32px "IBM Plex Mono", monospace';
+    x.fillText(fmt(c.lapTime,1) + ' per lap  ·  ' + paceLabel(), PAD, 478);
+
+    // rows
+    var y = 580;
+    x.strokeStyle = '#2A323B'; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(PAD, y-42); x.lineTo(W-PAD, y-42); x.stroke();
+    x.font = '600 22px Archivo, sans-serif';
+    x.fillStyle = '#8C97A3';
+    x.fillText('LAP', PAD, y-58);
+    x.textAlign = 'right';
+    x.fillText('SPLIT', W-PAD-210, y-58);
+    x.fillText('ELAPSED', W-PAD, y-58);
+
+    var maxRows = Math.min(c.rows.length, 9);
+    for(var i=0;i<maxRows;i++){
+      var r = c.rows[i];
+      x.textAlign = 'left';
+      x.fillStyle = '#E7ECF1';
+      x.font = '600 34px Archivo, sans-serif';
+      x.fillText(r.label, PAD, y + 14);
+      x.textAlign = 'right';
+      x.font = '500 38px "IBM Plex Mono", monospace';
+      x.fillStyle = '#F2F5F8';
+      x.fillText(fmt(r.seg,1), W-PAD-210, y + 14);
+      x.fillStyle = '#95A0AC';
+      x.fillText(fmt(r.cum,1), W-PAD, y + 14);
+      y += 74;
+      x.strokeStyle = '#212831';
+      x.beginPath(); x.moveTo(PAD, y-30); x.lineTo(W-PAD, y-30); x.stroke();
+    }
+
+    x.textAlign = 'left';
+    x.fillStyle = '#8C97A3';
+    x.font = '400 26px Archivo, sans-serif';
+    x.fillText(c.lap.toFixed(1) + ' m laps · ' + Math.round(c.trueDist) + ' m covered · ' +
+               (c.bonus>=0?'+':'') + Math.round(c.bonus) + ' m of free work', PAD, H - 92);
+    x.fillStyle = '#4E5964';
+    x.font = '600 22px Archivo, sans-serif';
+    x.fillText('LANE SPLITS', PAD, H - 46);
+    return cv;
+  }
+
+  function canvasBlob(cv){
+    return new Promise(function(res){
+      if(cv.toBlob) cv.toBlob(function(b){ res(b); }, 'image/png');
+      else res(null);
+    });
+  }
+
+  $('shareBtn').addEventListener('click', function(){
+    var btn = this;
+    btn.disabled = true;
+    var cv = drawCard();
+    canvasBlob(cv).then(function(blob){
+      var filename = state.rep + 'm-lane' + effectiveLane().toFixed(1).replace(/\.0$/,'') + '-splits.png';
+      var showInline = function(msg){
+        $('shareImg').src = cv.toDataURL('image/png');
+        $('shareOut').style.display = 'flex';
+        if(msg) $('shareHint').textContent = msg;
+        btn.disabled = false;
+      };
+      var claude = window.claude;
+      if(claude && claude.use && blob){
+        claude.use('downloads').then(function(dl){
+          if(!dl){ showInline(); return; }
+          dl.save({ filename: filename, data: blob }).then(function(){
+            btn.textContent = 'Saved';
+            btn.disabled = false;
+            setTimeout(function(){ btn.textContent = 'Save split image'; }, 1800);
+          }, function(){
+            showInline();
+          });
+        }, function(){ showInline(); });
+      } else {
+        showInline();
+      }
+    });
+  });
+
+  /* ---------- boot ---------- */
+  load();
+  $('laneWidth').value = state.laneWidth;
+  $('kerb').checked = state.kerb;
+  render();
+})();
+</script>
+
+</body>
+</html>
