@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Lane Splits</title>
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -72,8 +73,6 @@
     line-height:1.45;
     -webkit-text-size-adjust:100%;
   }
-  img{max-width:100%}
-  [hidden]:not([hidden=until-found i]){display:none!important}
   .wrap{
     max-width:600px;
     margin:0 auto;
@@ -207,12 +206,21 @@
     border-bottom:1px solid var(--line-soft);
     background:linear-gradient(180deg,var(--surface-2),var(--surface));
   }
-  #repTime{
-    font-size:clamp(46px,15vw,66px); font-weight:700; line-height:.92;
-    font-variation-settings:'wdth' 118; letter-spacing:-.02em;
-    display:block; margin:2px 0 0;
+  .headline{ display:flex; align-items:flex-start; gap:12px; }
+  .headline .num{ flex:1 1 0; min-width:0; }
+  .headline .num.lap{
+    border-left:1px solid var(--line); padding-left:12px;
   }
-  #repCaption{ font-size:13px; color:var(--muted); margin-top:8px; }
+  .headline .eyebrow{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .headline .eyebrow span{ font-weight:500; letter-spacing:.08em; }
+  #lapTime, #repTime{
+    font-size:clamp(29px,8.2vw,40px); font-weight:700; line-height:.95;
+    font-variation-settings:'wdth' 105; letter-spacing:-.02em;
+    display:block; margin:5px 0 0; white-space:nowrap;
+  }
+  #lapTime{ color:var(--brick); }
+  #repTime{ color:var(--ink); }
+  #repCaption{ font-size:13px; color:var(--muted); margin-top:12px; }
   .facts{
     display:grid; grid-template-columns:repeat(3,1fr);
     border-bottom:1px solid var(--line-soft);
@@ -303,10 +311,10 @@
     </div>
 
     <div id="paneDirect" class="field">
-      <button type="button" class="step" id="paceDown" aria-label="Five seconds slower">−5s</button>
+      <button type="button" class="step" id="paceDown" aria-label="Five seconds faster">−5s</button>
       <input type="text" id="paceInput" inputmode="decimal" autocomplete="off"
              aria-label="Goal pace, minutes and seconds" value="8:00">
-      <button type="button" class="step" id="paceUp" aria-label="Five seconds faster">+5s</button>
+      <button type="button" class="step" id="paceUp" aria-label="Five seconds slower">+5s</button>
       <span class="unit" id="paceUnit">/ mi</span>
     </div>
 
@@ -347,14 +355,22 @@
   <!-- RESULT -->
   <section class="result" aria-live="polite">
     <div class="result-head">
-      <div class="eyebrow">Target rep time</div>
-      <span class="mono display" id="repTime">8:22.7</span>
+      <div class="headline">
+        <div class="num total">
+          <div class="eyebrow" id="totalEyebrow">1600 m rep</div>
+          <span class="mono display" id="repTime">8:22.7</span>
+        </div>
+        <div class="num lap">
+          <div class="eyebrow">Lap split <span id="lapEyebrowDist">· 418.5 m</span></div>
+          <span class="mono display" id="lapTime">2:05.7</span>
+        </div>
+      </div>
       <div id="repCaption">4 laps of 418.5 m at 8:00 / mi</div>
     </div>
     <div class="facts">
-      <div class="fact"><div class="k">Lap split</div><div class="v" id="fLap">2:05.7</div></div>
       <div class="fact"><div class="k">True distance</div><div class="v" id="fDist">1674 m</div></div>
       <div class="fact"><div class="k">Bonus</div><div class="v" id="fBonus" style="color:var(--good)">+74 m</div></div>
+      <div class="fact"><div class="k">Goal pace</div><div class="v" id="fPace">8:00</div></div>
     </div>
     <table>
       <thead>
@@ -382,8 +398,7 @@
         <input type="number" id="laneWidth" value="1.22" step="0.01" min="0.9" max="1.5">
         <span class="unit">m — 1.22 is the World Athletics standard</span>
       </div>
-      <label class="switch"><input type="checkbox" id="kerb" checked> Raised kerb on the inside of lane 1</label>
-      <div class="hint">Distances use the World Athletics model: 84.39 m straights, 36.50 m inner radius, and a measure line 30 cm out from the kerb in lane 1 (20 cm if there is no kerb) and 20 cm out from the inner line in every other lane.</div>
+      <div class="hint">Distances use the World Athletics model: 84.39 m straights, a 36.50 m inner radius, and a measure line 30 cm out from the kerb in lane 1 and 20 cm out from the inner line in every other lane. Lane 1 therefore comes out at exactly 400.00 m and lane 8 at 453.03 m.</div>
     </div>
   </details>
 
@@ -407,24 +422,25 @@
     raceTime: '1:45:00',
     lanes: [3,4],
     rep: 1600,
-    laneWidth: 1.22,
-    kerb: true
+    laneWidth: 1.22
   };
 
   /* ---------- storage ---------- */
   function load(){
     try{
-      var raw = localStorage.getItem('lane-splits');
+      var raw = localStorage.getItem('lane-splits-v2');
       if(raw){ var o = JSON.parse(raw); for(var k in o){ if(k in state) state[k]=o[k]; } }
     }catch(e){}
   }
   function save(){
-    try{ localStorage.setItem('lane-splits', JSON.stringify(state)); }catch(e){}
+    try{ localStorage.setItem('lane-splits-v2', JSON.stringify(state)); }catch(e){}
   }
 
   /* ---------- math ---------- */
   function laneDistance(n){
-    var offset = (n === 1 && state.kerb) ? 0.30 : 0.20;
+    /* lane 1 is measured 30 cm out from the raised kerb, every other lane
+       20 cm out from its inner line — this puts lane 1 at exactly 400.00 m */
+    var offset = (n === 1) ? 0.30 : 0.20;
     var r = INNER_R + state.laneWidth * (n - 1) + offset;
     return 2*STRAIGHT + 2*Math.PI*r;
   }
@@ -568,15 +584,14 @@
     $('paceInput').value = state[key];
     render(); save();
   }
-  $('paceDown').addEventListener('click', function(){ nudge(5); });
-  $('paceUp').addEventListener('click', function(){ nudge(-5); });
+  $('paceDown').addEventListener('click', function(){ nudge(-5); });
+  $('paceUp').addEventListener('click', function(){ nudge(5); });
   $('raceDist').addEventListener('change', function(){ state.raceDist = Number(this.value); render(); save(); });
   $('raceTime').addEventListener('input', function(){ state.raceTime = this.value; render(); save(); });
   $('laneWidth').addEventListener('input', function(){
     var v = Number(this.value);
     if(isFinite(v) && v > 0.5) { state.laneWidth = v; render(); save(); }
   });
-  $('kerb').addEventListener('change', function(){ state.kerb = this.checked; render(); save(); });
 
   /* ---------- render ---------- */
   var current = null;
@@ -655,12 +670,15 @@
     }
 
     // result
+    $('lapTime').textContent = fmt(c.lapTime, 1);
+    $('lapEyebrowDist').textContent = '· ' + c.lap.toFixed(1) + ' m';
     $('repTime').textContent = fmt(c.total, 1);
+    $('totalEyebrow').textContent = state.rep + ' m rep';
     $('repCaption').textContent = (c.laps % 1 === 0 ? c.laps : c.laps.toFixed(2)) +
       (c.laps === 1 ? ' lap' : ' laps') + ' of ' + c.lap.toFixed(1) + ' m at ' + paceLabel();
-    $('fLap').textContent = fmt(c.lapTime, 1);
     $('fDist').textContent = Math.round(c.trueDist) + ' m';
     $('fBonus').textContent = (c.bonus >= 0 ? '+' : '') + Math.round(c.bonus) + ' m';
+    $('fPace').textContent = isFinite(c.pace) ? fmt(c.pace * (state.mode === 'km' ? 1000 : MI), 0) : '—';
 
     rowsEl.innerHTML = '';
     c.rows.forEach(function(r, idx){
@@ -728,15 +746,15 @@
     x.textAlign = 'left';
     x.fillStyle = '#8C97A3';
     x.font = '600 24px Archivo, sans-serif';
-    x.fillText((state.rep + ' M REPS · ' + laneLabelText()).toUpperCase(), PAD, 268);
-
-    x.fillStyle = '#F2F5F8';
-    x.font = '700 168px Archivo, sans-serif';
-    x.fillText(fmt(c.total,1), PAD, 420);
+    x.fillText((laneLabelText() + ' · ' + c.lap.toFixed(1) + ' m laps').toUpperCase(), PAD, 268);
 
     x.fillStyle = '#C1503A';
-    x.font = '600 32px "IBM Plex Mono", monospace';
-    x.fillText(fmt(c.lapTime,1) + ' per lap  ·  ' + paceLabel(), PAD, 478);
+    x.font = '700 168px Archivo, sans-serif';
+    x.fillText(fmt(c.lapTime,1), PAD, 420);
+
+    x.fillStyle = '#E7ECF1';
+    x.font = '600 30px "IBM Plex Mono", monospace';
+    x.fillText('per lap  ·  ' + state.rep + ' m in ' + fmt(c.total,1) + '  ·  ' + paceLabel(), PAD, 478);
 
     // rows
     var y = 580;
@@ -818,7 +836,6 @@
   /* ---------- boot ---------- */
   load();
   $('laneWidth').value = state.laneWidth;
-  $('kerb').checked = state.kerb;
   render();
 })();
 </script>
